@@ -168,47 +168,60 @@ export default function HostPage() {
       </div>
 
       {/* 날짜 선택 드롭다운 */}
-      <div className="card" style={{ marginBottom: '20px', padding: '15px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <label style={{ fontWeight: '500', color: '#301713' }}>이벤트 날짜:</label>
-          <select
-            value={selectedDate}
-            onChange={(e) => {
-              setSelectedDate(e.target.value);
-              loadData(e.target.value);
-            }}
-            style={{
-              flex: 1,
-              padding: '10px 12px',
-              border: '1px solid #e0e0e0',
-              borderRadius: '8px',
-              fontSize: '14px',
-              backgroundColor: 'white'
-            }}
-          >
-            {allEvents.map((ev) => (
-              <option key={ev.date} value={ev.date}>
-                {ev.date} - {ev.title || 'The Shortlist'} ({ev.status || 'pending'})
-              </option>
-            ))}
-          </select>
-          <button
-            onClick={() => loadData(selectedDate)}
-            style={{
-              padding: '10px 16px',
-              backgroundColor: '#9d4a3d',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer'
-            }}
-          >
-            새로고침
-          </button>
+      <div className="card" style={{ marginBottom: '20px', padding: '20px' }}>
+        <div style={{ marginBottom: '12px' }}>
+          <label style={{ 
+            display: 'block',
+            fontWeight: '500', 
+            color: '#301713',
+            marginBottom: '8px',
+            fontSize: '14px'
+          }}>
+            이벤트 선택
+          </label>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <select
+              value={selectedDate}
+              onChange={(e) => {
+                setSelectedDate(e.target.value);
+                loadData(e.target.value);
+              }}
+              style={{
+                flex: 1,
+                padding: '12px 14px',
+                border: '1px solid #e0e0e0',
+                borderRadius: '8px',
+                fontSize: '14px',
+                backgroundColor: 'white',
+                cursor: 'pointer'
+              }}
+            >
+              {allEvents.map((ev) => (
+                <option key={ev.date} value={ev.date}>
+                  {ev.date} ({ev.ageRange || '연령미정'})
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={() => loadData(selectedDate)}
+              className="btn btn-primary"
+              style={{ padding: '12px 20px', whiteSpace: 'nowrap' }}
+            >
+              새로고침
+            </button>
+          </div>
         </div>
         {event && (
-          <div style={{ marginTop: '10px', fontSize: '13px', color: '#666' }}>
-            참가자: {participants.length}명 (여{participants.filter(p=>p.gender==='W').length}, 남{participants.filter(p=>p.gender==='M').length})
+          <div style={{ 
+            display: 'flex', 
+            gap: '15px', 
+            fontSize: '13px', 
+            color: '#666',
+            flexWrap: 'wrap'
+          }}>
+            <span>📅 {event.title || 'The Shortlist'}</span>
+            <span>👥 참가자 {participants.length}명 (여{participants.filter(p=>p.gender==='W').length}, 남{participants.filter(p=>p.gender==='M').length})</span>
+            <span>📍 {event.location || '장소 미정'}</span>
           </div>
         )}
       </div>
@@ -408,16 +421,28 @@ export default function HostPage() {
 
           <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
             <span className="badge badge-primary">
-              남성 {participants.filter(p => p.gender === 'M').length}명
+              여성 {participants.filter(p => p.gender === 'W').length}명
             </span>
             <span className="badge badge-primary">
-              여성 {participants.filter(p => p.gender === 'F').length}명
+              남성 {participants.filter(p => p.gender === 'M').length}명
             </span>
           </div>
 
           {participants.length > 0 ? (
             <div style={{ fontSize: '13px' }}>
-              {participants.map((p, i) => (
+              {/* 여성 먼저 (W1~W10), 그 다음 남성 (M1~M10) */}
+              {[...participants]
+                .sort((a, b) => {
+                  // 먼저 성별로 정렬 (W가 먼저)
+                  if (a.gender !== b.gender) {
+                    return a.gender === 'W' ? -1 : 1;
+                  }
+                  // 같은 성별이면 eventCode 숫자로 정렬
+                  const numA = parseInt(a.eventCode?.replace(/\D/g, '') || '0');
+                  const numB = parseInt(b.eventCode?.replace(/\D/g, '') || '0');
+                  return numA - numB;
+                })
+                .map((p, i) => (
                 <div key={i} style={{ 
                   padding: '10px', 
                   background: i % 2 === 0 ? '#f9f9f9' : 'white',
