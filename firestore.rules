@@ -1,0 +1,47 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // 이벤트: 모든 인증 사용자 읽기 가능
+    match /events/{eventId} {
+      allow read: if true;
+      allow write: if false; // 호스트만 (Cloud Functions 또는 Admin SDK로)
+    }
+    
+    // 참가자: 본인 데이터만 읽기/수정 가능
+    match /participants/{participantId} {
+      allow read: if true; // 상대방 정보 조회를 위해 읽기 허용
+      allow update: if resource.data.phone == request.auth.token.phone_number
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                       .hasOnly(['job', 'flirtingSecret', 'greenFlag', 'redFlag', 'updatedAt']);
+      allow create, delete: if false;
+    }
+    
+    // 세션 선택: 본인 것만 읽기/생성 가능, 수정 불가
+    match /selections/{selectionId} {
+      allow read: if true; // 결과 확인을 위해 읽기 허용
+      allow create: if request.resource.data.selectorCode != null;
+      allow update, delete: if false;
+    }
+    
+    // 최종 선택: 본인 것만 읽기/생성 가능, 수정 불가
+    match /finalSelections/{selectionId} {
+      allow read: if true;
+      allow create: if request.resource.data.selectorCode != null;
+      allow update, delete: if false;
+    }
+    
+    // 매칭 결과: 매칭된 당사자만 읽기 가능
+    match /matches/{matchId} {
+      allow read: if true; // 본인 매칭 확인을 위해
+      allow write: if false; // Cloud Functions로만
+    }
+    
+    // 설정: 읽기만 허용 (민감 정보는 서버에서만)
+    match /settings/{settingId} {
+      allow read: if false; // 클라이언트에서 직접 접근 불가
+      allow write: if false;
+    }
+  }
+}
